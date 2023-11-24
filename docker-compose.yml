@@ -18,6 +18,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker1:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
 
   kafka-broker2:
     image: confluentinc/cp-kafka:latest
@@ -29,6 +31,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker2:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9093:9093"
 
   kafka-broker3:
     image: confluentinc/cp-kafka:latest
@@ -40,6 +44,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker3:9094
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9094:9094"
 
   schema-registry:
     image: confluentinc/cp-schema-registry:latest
@@ -47,6 +53,8 @@ services:
     depends_on:
       - zookeeper
       - kafka-broker1
+    ports:
+      - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
@@ -60,6 +68,7 @@ services:
       - kafka-broker1
       - kafka-broker2
       - kafka-broker3
+      - schema-registry
     ports:
       - "8080:8080"
     environment:
@@ -67,3 +76,16 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker1:9092,kafka-broker2:9093,kafka-broker3:9094
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+
+  kafka-setup:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - kafka-ui
+      - zookeeper
+    command: >
+      bash -c "
+      echo 'Waiting for the brokers to be ready...'
+      cub kafka-ready -b kafka-broker1:9092,kafka-broker2:9093,kafka-broker3:9094 1 40 &&
+      kafka-topics --create --if-not-exists --bootstrap-server kafka-broker1:9092 --partitions 1 --replication-factor 1 --topic message-topic-example
+      echo 'Topic created successfully.'
+      "

@@ -29,23 +29,12 @@ public class MessageKafkaProducer {
                 .build();
     }
 
-    // TODO: implement this method
-    // private object getAvroSchemaFromRegistry(){
-    // }
-
-    // TODO: based on the avro from the registry, lets validate it
-    private boolean isValidSchema(MessageAvro message){
-        return true;
-    }
-
     public void sendMessage(Message message) throws Exception {
-       MessageAvro avroMessage = convertToAvro(message);
-
-       if (isValidSchema(avroMessage)) {
-           // TODO: currently is throwing an error ( probably wrong dependencies )
-           kafkaTemplate.send(TOPIC, avroMessage);
-       } else {
-            throw new Exception("Invalid message provided");
-       }
+        try{
+            MessageAvro avroMessage = convertToAvro(message);
+            kafkaTemplate.send(TOPIC, avroMessage);
+        }catch (Exception e){
+            throw new Exception("Error sending message to kafka topic");
+        }
     }
 }
